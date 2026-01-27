@@ -68,8 +68,12 @@ module.exports.loginUser = (req, res) => {
 
             // Success
             return res.status(200).send({
-                access: auth.createAccessToken(user),
-                message: "Login successful"
+              access: auth.createAccessToken(user),
+              user: {
+                email: user.email,
+                isAdmin: user.isAdmin
+              },
+              message: "Login successful"
             });
         })
         .catch(err => {
