@@ -2,49 +2,80 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const auth = require("../auth");
 
-// Register User
+// Register user
 module.exports.registerUser = (req, res) => {
-  const { email, password, isAdmin = false } = req.body;
 
-  // Check email format
-  if (!email.includes("@")) return res.status(400).send(false);
+    // Email validation
+    if (!req.body.email.includes("@")) {
+        return res.status(400).send({ message: "Invalid email format" });
+    }
 
-  // Check password length
-  if (password.length < 8) return res.status(400).send(false);
+    // Password validation
+    if (req.body.password.length < 8) {
+        return res.status(400).send({ message: "Password must be at least 8 characters" });
+    }
 
-  // Create new user
-  const newUser = new User({
-    email,
-    password: bcrypt.hashSync(password, 10),
-    isAdmin
-  });
+    // Check if user already exists
+    User.findOne({ email: req.body.email })
+        .then(existingUser => {
+            if (existingUser) {
+                return res.status(409).send({ message: "User already exists" });
+            }
 
-  newUser.save()
-    .then(() => {
-      res.status(201).send({ message: "Registered successfully" });
-    })
-    .catch(error => errorHandler(error, req, res));
+            // Create new user
+            const newUser = new User({
+                email: req.body.email,
+                password: bcrypt.hashSync(req.body.password, 10),
+                isAdmin: req.body.isAdmin || false
+            });
+
+            return newUser.save()
+                .then(() => {
+                    return res.status(201).send({ message: "Registered successfully" });
+                });
+        })
+        .catch(err => {
+            console.error(err);
+            return res.status(500).send({
+                message: "Server error. Please contact administrator."
+            });
+        });
 };
 
-// Login User
+// Login user
 module.exports.loginUser = (req, res) => {
-  const { email, password } = req.body;
 
-  if (!email.includes("@")) return res.status(400).send(false);
+    // Email validation
+    if (!req.body.email.includes("@")) {
+        return res.status(400).send({ message: "Invalid email format" });
+    }
 
-  User.findOne({ email })
-    .then(user => {
-      if (!user) return res.status(404).send(false);
+    User.findOne({ email: req.body.email })
+        .then(user => {
 
-      const isPasswordCorrect = bcrypt.compareSync(password, user.password);
+            if (!user) {
+                return res.status(404).send({ message: "User does not exist" });
+            }
 
-      if (isPasswordCorrect) {
-        return res.status(200).send({
-          access: auth.createAccessToken(user),
+            const isPasswordCorrect = bcrypt.compareSync(
+                req.body.password,
+                user.password
+            );
+
+            if (!isPasswordCorrect) {
+                return res.status(401).send({ message: "Incorrect password" });
+            }
+
+            // Success
+            return res.status(200).send({
+                access: auth.createAccessToken(user),
+                message: "Login successful"
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            return res.status(500).send({
+                message: "Server error. Please contact administrator."
+            });
         });
-      } else {
-        return res.status(401).send(false);
-      }
-    })
-    .catch(error => errorHandler(error, req, res));
 };
