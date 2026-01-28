@@ -20,7 +20,12 @@ module.exports.addMovie = (req, res) => {
                 });
             }
 
-            const newMovie = new Movie(req.body);
+            const newMovie = new Movie({
+                title,
+                description,
+                year,
+                genre
+            });
 
             return newMovie.save()
                 .then(movie => res.status(201).send({
@@ -28,8 +33,12 @@ module.exports.addMovie = (req, res) => {
                     movie
                 }));
         })
-        .catch(error => errorHandler(error, req, res));
+        .catch(error => {
+            console.error("Add Movie Error:", error);
+            errorHandler(error, req, res);
+        });
 };
+
 
 // Get all movies
 module.exports.getAllMovies = (req, res) => {
@@ -65,13 +74,21 @@ module.exports.getMovieById = (req, res) => {
 // Update movie
 module.exports.updateMovie = (req, res) => {
 
+    const { title, description, year, genre } = req.body;
+
+    // Optional: validate required fields
+    if (!title || !description || !year || !genre) {
+        return res.status(400).send({
+            message: "Please provide all movie details"
+        });
+    }
+
     Movie.findByIdAndUpdate(
         req.params.id,
-        req.body,
-        { new: true }
+        { title, description, year, genre },
+        { new: true, runValidators: true }
     )
     .then(movie => {
-
         if (!movie) {
             return res.status(404).send({
                 message: "Movie not found"
@@ -83,8 +100,12 @@ module.exports.updateMovie = (req, res) => {
             updatedMovie: movie
         });
     })
-    .catch(error => errorHandler(error, req, res));
+    .catch(error => {
+        console.error("Update Movie Error:", error);
+        errorHandler(error, req, res);
+    });
 };
+
 
 // Delete movie
 module.exports.deleteMovie = (req, res) => {
