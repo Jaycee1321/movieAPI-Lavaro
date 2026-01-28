@@ -10,7 +10,7 @@ router.get('/getMovie/:id', movieController.getMovieById);
 router.get('/getComments/:id', movieController.getMovieComments);
 
 // Authenticated user routes
-router.post('/addComment/:id', verify, movieController.addMovieComment);
+router.post('/addComment/:id', verify, movieController.addComment);
 
 // Admin-only routes
 router.post('/addMovie', verify, verifyAdmin, movieController.addMovie);

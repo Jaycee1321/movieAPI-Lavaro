@@ -127,38 +127,36 @@ module.exports.deleteMovie = (req, res) => {
 };
 
 // Add comment to movie
-module.exports.addMovieComment = async (req, res) => {
-  try {
-    // Check authentication
-    if (!req.user || !req.user.email) {
-      return res.status(401).send({ message: "You must be logged in to comment" });
+module.exports.addComment = (req, res) => {
+
+    if (!req.body.text) {
+        return res.status(400).send({
+            message: "Comment text is required"
+        });
     }
 
-    const commentText = req.body.text || req.body.comment;
-    if (!commentText) {
-      return res.status(400).send({ message: "Comment text is required" });
-    }
+    Movie.findById(req.params.id)
+        .then(movie => {
 
-    const movie = await Movie.findById(req.params.id);
-    if (!movie) return res.status(404).send({ message: "Movie not found" });
+            if (!movie) {
+                return res.status(404).send({
+                    message: "Movie not found"
+                });
+            }
 
-    movie.comments.push({
-      username: req.user.email,
-      text: commentText
-    });
+            movie.comments.push({
+                username: req.user.email,
+                text: req.body.text
+            });
 
-    await movie.save();
-
-    return res.status(201).send({
-      message: "Comment added successfully",
-      comments: movie.comments
-    });
-  } catch (err) {
-    console.error("Add Comment Error:", err);
-    return res.status(500).send({ message: "Failed to add comment" });
-  }
+            return movie.save()
+                .then(() => res.status(201).send({
+                    message: "Comment added successfully",
+                    comments: movie.comments
+                }));
+        })
+        .catch(error => errorHandler(error, req, res));
 };
-
 
 // Get movie comments
 module.exports.getMovieComments = (req, res) => {
