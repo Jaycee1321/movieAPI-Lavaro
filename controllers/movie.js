@@ -3,10 +3,9 @@ const { errorHandler } = require('../auth');
 
 // Add movie
 module.exports.addMovie = (req, res) => {
+    const { title, description, year, genre, director, rating } = req.body;
 
-    const { title, description, year, genre } = req.body;
-
-    if (!title || !description || !year || !genre) {
+    if (!title || !description || !year || !genre || !director || rating == null) {
         return res.status(400).send({
             message: "Please provide all movie details"
         });
@@ -24,7 +23,9 @@ module.exports.addMovie = (req, res) => {
                 title,
                 description,
                 year,
-                genre
+                genre,
+                director,
+                rating
             });
 
             return newMovie.save()
@@ -73,11 +74,9 @@ module.exports.getMovieById = (req, res) => {
 
 // Update movie
 module.exports.updateMovie = (req, res) => {
+    const { title, description, year, genre, director, rating } = req.body;
 
-    const { title, description, year, genre } = req.body;
-
-    // Optional: validate required fields
-    if (!title || !description || !year || !genre) {
+    if (!title || !description || !year || !genre || !director || rating == null) {
         return res.status(400).send({
             message: "Please provide all movie details"
         });
@@ -85,7 +84,7 @@ module.exports.updateMovie = (req, res) => {
 
     Movie.findByIdAndUpdate(
         req.params.id,
-        { title, description, year, genre },
+        { title, description, year, genre, director, rating },
         { new: true, runValidators: true }
     )
     .then(movie => {
@@ -105,6 +104,7 @@ module.exports.updateMovie = (req, res) => {
         errorHandler(error, req, res);
     });
 };
+
 
 
 // Delete movie
